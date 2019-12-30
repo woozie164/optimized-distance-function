@@ -1,6 +1,8 @@
 #include <vector>
 #include <assert.h>
 
+const int numElements = 5;
+
 inline
 float distance(float x0, float y0, float x1, float y1)
 {
@@ -10,7 +12,7 @@ float distance(float x0, float y0, float x1, float y1)
 }
 
 // Performs n * n distance calculations
-void naiveDistance(const std::vector<float>& x, const std::vector<float>& y, std::vector<float>* distances)
+void naiveDistance(const std::vector<float>& x, const std::vector<float>& y, float distances[numElements][numElements])
 {
 	assert(x.size() == y.size());
 	const unsigned int numElements = x.size();
@@ -19,14 +21,14 @@ void naiveDistance(const std::vector<float>& x, const std::vector<float>& y, std
 	{
 		for (unsigned int j = 0; j < numElements; j++)
 		{			
-			(*distances)[j + i * numElements] = distance(x[i], y[i], x[j], y[j]);
+			distances[i][j] = distance(x[i], y[i], x[j], y[j]);
 		}
 	}
 }
 
 // Performs n + (n - 1) + (n - 2) ... + (n - (n-1)) distance calculations
 // About half of what that the naiveDistance function does
-void optimizedDistance(const std::vector<float>& x, const std::vector<float>& y, std::vector<float>* distances)
+void optimizedDistance(const std::vector<float>& x, const std::vector<float>& y, float distances[numElements][numElements])
 {
 	assert(x.size() == y.size());
 	const unsigned int numElements = x.size();
@@ -42,38 +44,41 @@ void optimizedDistance(const std::vector<float>& x, const std::vector<float>& y,
 
 		// Copy all distances that we've already calculated for this point
 		//for (unsigned int j = 0; j < numElementsProcessed && j + numElementsProcessed < numDistancesTotal; j++)
-		for(unsigned int j = 0; j < i; j++)
+		for (unsigned int j = 0; j < i; j++)
 		{
-			(*distances)[j + numElementsProcessed] = (*distances)[j + 1];
+			distances[i][j] = distances[i][j + 1];
 		}
 
 		for (unsigned int j = i + 1; j < numElements; j++)
-		{	
-			(*distances)[j + numElementsProcessed] = distance(x[i], y[i], x[j], y[j]);
+		{				
+			distances[i][j] = distance(x[i], y[i], x[j], y[j]);
 		}
 	}
 }
 
 int main()
 {
-	const int numElements = 5;
 	std::vector<float> x { 1, 5, 8, 10, 2};
 	std::vector<float> y { 0, 0, 0, 0, 0 };
 
-	std::vector<float> distancesNaive(numElements * numElements);
-	naiveDistance(x, y, &distancesNaive);
+	float distancesNaive[numElements][numElements];
+	naiveDistance(x, y, distancesNaive);
 	
-	std::vector<float> distancesOpt(numElements * numElements);
-	optimizedDistance(x, y, &distancesOpt);		
+	float distancesOpt[numElements][numElements];
+	memset(distancesOpt, 0, sizeof(float) * numElements * numElements); // TODO: optimize this
+	optimizedDistance(x, y, distancesOpt);		
 
 	//assert(memcmp(&distancesNaive, &distancesOpt, numElements * numElements * sizeof(float)) == 0);
 
-	for (int i = 0; i < numElements * numElements; i++)
+	for (int i = 0; i < numElements; i++)
 	{
-		if (distancesNaive[i] != distancesOpt[i])
+		for (int j = 0; j < numElements; j++)
 		{
-			assert(false);
-		}
+			if (distancesNaive[i][j] != distancesOpt[i][j])
+			{
+				assert(false);
+			}
+		}		
 	}
 
 	return 0;
